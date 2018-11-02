@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"./database"
 	"./docker"
 	"github.com/orisano/uds"
 )
@@ -18,6 +19,7 @@ const (
 
 var (
 	dockerAPIClient = uds.NewClient(dockerSocketPath)
+	//"time"
 )
 
 func main() {
@@ -29,6 +31,21 @@ func main() {
 	// 	MaxHeaderBytes: 1 << 20,
 	// }
 	// server.ListenAndServe()
+	var database = database.Database{}
+	database.Connect()
+	/*
+		fmt.Print(time.Now())
+		for index := 0; index < 100000; index++ {
+			database.InsertFunction("Nome",2, 1024, "Código","Package")
+			if index%1000==0{
+				fmt.Println(index)
+			}
+		}
+		fmt.Print(time.Now())
+	*/
+
+	fmt.Print(database.SelectAllFunction())
+	database.Close()
 
 	client := docker.Client{}
 	client.Init()
@@ -44,10 +61,10 @@ func main() {
 	}
 	fmt.Println(elapsedTime)
 
-	// http.HandleFunc("/function", function)
+	http.HandleFunc("/function", function)
 	// http.HandleFunc("/metrics", metrics)
 	// http.HandleFunc("/call", call)
-	// http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":8000", nil)
 }
 
 // Handler represents the http struct that hold a function to process requests.
@@ -59,7 +76,12 @@ func main() {
 
 func function(res http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
-		res.Write([]byte(fmt.Sprintf("[%v] %v\n", req.Method, req.RequestURI)))
+		keys, ok := req.URL.Query()["name"]
+		if ok && len(keys[0]) >= 1 {
+			getFunctionByName(res, req, keys[0])
+			return
+		}
+		getAllFunctions(res, req)
 		return
 	}
 
@@ -93,6 +115,14 @@ func function(res http.ResponseWriter, req *http.Request) {
 	resp.Body.Close()
 
 	res.Write([]byte(fmt.Sprintf("[%v] %v\n", req.Method, req.RequestURI)))
+}
+
+func getAllFunctions(res http.ResponseWriter, req *http.Request) {
+	res.Write([]byte(fmt.Sprintf("[%v] %v\n", req.Method, req.RequestURI)))
+}
+
+func getFunctionByName(res http.ResponseWriter, req *http.Request, name string) {
+	res.Write([]byte(fmt.Sprintf("Url Param 'param' found with value %v", name)))
 }
 
 func metrics(res http.ResponseWriter, req *http.Request) {
