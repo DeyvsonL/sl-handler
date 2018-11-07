@@ -4,6 +4,6 @@ module.exports.helloWorld = (req, res) => {
 }
 
 module.exports.hello = (req, res) => {
-    console.log("hello")
-    res.send("hello")
+    console.log("logging inside container - hello")
+    res.send("sending through response - hello")
 }
