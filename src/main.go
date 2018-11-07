@@ -230,7 +230,7 @@ func call(res http.ResponseWriter, req *http.Request) {
 	logResponseReader.Read(logHeader)
 	logResponse, _ := ioutil.ReadAll(logResponseReader)
 	functionResponse := logResponse[bytes.LastIndexByte(logResponse, byte('\n'))+1:]
-	logResponseReader.Close()
+	defer logResponseReader.Close()
 	fmt.Println(string(functionResponse))
 	fmt.Printf("## Container Get Logs Time: %v\n", time.Since(startTime))
 
@@ -245,25 +245,28 @@ func call(res http.ResponseWriter, req *http.Request) {
 	res.Write(functionBodyBytes)
 	fmt.Printf("## Process Function And Respond Time: %v\n", time.Since(startTime))
 
-	startTime = time.Now()
-	dockerClient.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{})
-	fmt.Printf("## Remove Container Time: %v\n", time.Since(startTime))
-	// fmt.Println(client.DeleteImage(imageName))
+	go func() {
 
-	// metric := database.Metric{
-	// 	Function:                  imageName,
-	// 	ContainerID:               containerID,
-	// 	ContainerCreateTime:       containerCreateTime,
-	// 	ContainerStartTime:        containerStartTime,
-	// 	ApplicationConnectionTime: applicationConnectionTime,
-	// 	ApplicationRunTime:        applicationRunTime,
-	// 	ApplicationCode:           applicationCode,
-	// 	ContainerStopTime:         containerStopTime,
-	// 	ContainerDeleteTime:       containerDeleteTime,
-	// }
+		startTime = time.Now()
+		dockerClient.ContainerRemove(context.Background(), containerID, types.ContainerRemoveOptions{})
+		fmt.Printf("## Remove Container Time: %v\n", time.Since(startTime))
+		// fmt.Println(client.DeleteImage(imageName))
 
-	// mdbPersistChan <- true // disable later
-	// mdbMetricChan <- metric
+		// metric := database.Metric{
+		// 	Function:                  imageName,
+		// 	ContainerID:               containerID,
+		// 	ContainerCreateTime:       containerCreateTime,
+		// 	ContainerStartTime:        containerStartTime,
+		// 	ApplicationConnectionTime: applicationConnectionTime,
+		// 	ApplicationRunTime:        applicationRunTime,
+		// 	ApplicationCode:           applicationCode,
+		// 	ContainerStopTime:         containerStopTime,
+		// 	ContainerDeleteTime:       containerDeleteTime,
+		// }
+
+		// mdbPersistChan <- true // disable later
+		// mdbMetricChan <- metric
+	}()
 }
 
 // func serialize() {
